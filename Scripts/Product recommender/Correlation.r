@@ -15,11 +15,11 @@ library(data.table)
 prodFiles <- list.files("Data/Input Data/ProductData/New Product Data", pattern="*.csv", full.names = T)
 
 productData <- lapply(prodFiles, fread, sep = "\t", header = TRUE, data.table = TRUE) %>%
-                    bind_rows(.id = "id") %>%
-                    select(-c("id", "product id", "product specifications",
-                              'enlisted shop code', "evaly price")) %>%
-                    rename(OrderItem = 'order item', ShopName = 'shop name', Brand = 'brand name',
-                           unit.seller.price = 'seller price', unit.mrp = 'mrp', category = 'category name')
+     bind_rows(.id = "id") %>%
+     select(-c("id", "product id", "product specifications",
+               'enlisted shop code', "e price")) %>%
+     rename(OrderItem = 'order item', ShopName = 'shop name', Brand = 'brand name',
+            unit.seller.price = 'seller price', unit.mrp = 'mrp', category = 'category name')
 
 #the 3 operation takes about 21 seconds in i9
 productData$OrderItem <- str_squish(productData$OrderItem)
@@ -37,18 +37,18 @@ file.list <- list.files(path = "Data/Input Data/SystemReport/System Report Till 
 
 #load the excel files, rename the last column as shopCode. Takes about 5 minutes for data since November.
 sales <- lapply(file.list, read_excel) %>%
-                    bind_rows(.id = "id")
+     bind_rows(.id = "id")
 
 rm(file.list, prodFiles)
 
 # add month column, remove comma from last update time and add last update date column,
 
 sales <-  mutate(sales, orderMonth = month(mdy(sales$`Order Date`)),
-                                               orderWeek = week(mdy(sales$`Order Date`))) %>%
-                    dplyr::select(c("Shop Name", "Order Items", "Order Quantity",
-                                    "Order Price","orderMonth", "orderWeek")) %>%
-                    dplyr::rename(ShopName = 'Shop Name', OrderItem = 'Order Items',
-                                  OrderQuantity = 'Order Quantity', unit.OrderPrice = 'Order Price')
+                 orderWeek = week(mdy(sales$`Order Date`))) %>%
+     dplyr::select(c("Shop Name", "Order Items", "Order Quantity",
+                     "Order Price","orderMonth", "orderWeek")) %>%
+     dplyr::rename(ShopName = 'Shop Name', OrderItem = 'Order Items',
+                   OrderQuantity = 'Order Quantity', unit.OrderPrice = 'Order Price')
 
 sales$unit.OrderPrice <- as.numeric(sales$unit.OrderPrice)
 sales$OrderQuantity <- as.numeric(sales$OrderQuantity)
@@ -68,13 +68,13 @@ total <- sales[, .(Total.Quantity = sum(OrderQuantity, na.rm = T)), by = .(ShopN
 
 
 unqItem <- sales %>% group_by(ShopName, OrderItem) %>%
-                    mutate(itemCount = row_number()) %>%
-                    filter(itemCount == 1) %>%
-                    select(c("ShopName", "OrderItem", "unit.OrderPrice"))
+     mutate(itemCount = row_number()) %>%
+     filter(itemCount == 1) %>%
+     select(c("ShopName", "OrderItem", "unit.OrderPrice"))
 
 data <- merge(merge(unqItem, productData, all = F, by = c("ShopName", "OrderItem")),
               total, all.x = T, all.y = F, by = c("ShopName", "OrderItem")) %>%
-                    mutate(discount = (unit.mrp-unit.OrderPrice)/unit.mrp)
+     mutate(discount = (unit.mrp-unit.OrderPrice)/unit.mrp)
 
 data <- dplyr::filter(data, data$unit.OrderPrice < data$unit.mrp)
 
@@ -82,8 +82,8 @@ data <- dplyr::filter(data, data$unit.OrderPrice < data$unit.mrp)
 #dictionary
 item <- data[!duplicated(data$OrderItem),]
 item <- item[order(item$OrderItem), ] %>%
-                    select(c("OrderItem")) %>%
-                    mutate(itemSerial = row_number())
+     select(c("OrderItem")) %>%
+     mutate(itemSerial = row_number())
 min <- min(item$itemSerial)
 max <- max(item$itemSerial)
 
@@ -92,8 +92,8 @@ item <- mutate(item, normalizedItemSerial = (max - itemSerial)/(max - min))
 
 brand <- data[!duplicated(data$Brand),]
 brand <- brand[order(brand$Brand), ] %>%
-                    select(c("Brand")) %>%
-                    mutate(brandSerial = row_number())
+     select(c("Brand")) %>%
+     mutate(brandSerial = row_number())
 min <- min(brand$brandSerial)
 max <- max(brand$brandSerial)
 
@@ -101,8 +101,8 @@ brand <- mutate(brand, normalizeBranddSerial = (max - brandSerial)/(max - min))
 
 category <- data[!duplicated(data$category), ]
 category <- category[order(category$category), ] %>%
-                    select(c("category")) %>%
-                    mutate(categorySerial = row_number())
+     select(c("category")) %>%
+     mutate(categorySerial = row_number())
 min <- min(category$categorySerial)
 max <- max(category$categorySerial)
 category <- mutate(category, normalizedCategorySerial = (max - categorySerial)/(max - min))
@@ -110,17 +110,17 @@ category <- mutate(category, normalizedCategorySerial = (max - categorySerial)/(
 
 discount <- data[!duplicated(data$discount), ]
 discount <- discount[order(discount$discount), ] %>%
-                    dplyr::filter(discount < .8) %>%
-                    select(c("discount")) %>%
-                    mutate(discountSerial = row_number())
+     dplyr::filter(discount < .8) %>%
+     select(c("discount")) %>%
+     mutate(discountSerial = row_number())
 min <- min(discount$discountSerial)
 max <- max(discount$discountSerial)
 discount <- mutate(discount, normalizedDiscountSerial = (max - discountSerial)/(max - min))
 
 orderPrice <- data[!duplicated(data$unit.OrderPrice), ]
 orderPrice <- orderPrice[order(orderPrice$unit.OrderPrice), ] %>%
-                    select(c("unit.OrderPrice")) %>%
-                    mutate(orderPriceSerial = row_number())
+     select(c("unit.OrderPrice")) %>%
+     mutate(orderPriceSerial = row_number())
 min <- min(orderPrice$orderPriceSerial)
 max <- max(orderPrice$orderPriceSerial)
 orderPrice <- mutate(orderPrice, normalizedOrderPriceSerial = (max - orderPriceSerial)/(max - min))
@@ -128,11 +128,11 @@ orderPrice <- mutate(orderPrice, normalizedOrderPriceSerial = (max - orderPriceS
 rm(min, max)
 
 dictData <- merge(merge(merge(merge(merge(data, item, all.x = T, all.y = F),
-                                brand, all.x = T, all.y = F),
-                          category, all.x = T, all.y = F),
-                    discount, all.x = T, all.y = F),
-              orderPrice, all.x = T, all.y = F) %>%
-                    dplyr::filter(discount < 0.8)
+                                    brand, all.x = T, all.y = F),
+                              category, all.x = T, all.y = F),
+                        discount, all.x = T, all.y = F),
+                  orderPrice, all.x = T, all.y = F) %>%
+     dplyr::filter(discount < 0.8)
 
 
 brandCor <- cor(dictData$normalizeBranddSerial, dictData$normalizedDiscountSerial)
