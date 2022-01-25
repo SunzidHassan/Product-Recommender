@@ -15,7 +15,7 @@ productData <- read.csv("Data/Output/allProductData.csv",
                         colClasses = c("product.name"="character","id"="character",
                                        "product.brand"="character", "product.category"="character",
                                        "enlisted.shop.code"="NULL","mrp"="NULL",
-                                       "seller.price"="NULL","evaly.price"="NULL"))
+                                       "seller.price"="NULL","e.price"="NULL"))
 
 #unique product name, ID, brand, category
 productNameID <- data.frame(productData[!duplicated(productData$id), ]) #keeping first product ID
