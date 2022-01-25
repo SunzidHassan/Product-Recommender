@@ -9,13 +9,13 @@ file.list <- list.files(path = "Data/Input Data/System Report", pattern="*.xlsx"
 
 #load the excel files, rename columns, select specific columns - takes about 6 minutes.
 system.time(
-                    sales <- lapply(file.list, read_excel) %>%
-                                        bind_rows(.id = "id") %>%
-                                        dplyr::rename(sales, ShopName = 'Shop Name', OrderItem = 'Order Items',
-                                                      OrderDate = 'Order Date', OrderQuantity = 'Order Quantity',
-                                                      OrderPrice = 'Order Price', shopCode = ...22, Customer = "Customer Id") %>%
-                                        dplyr::select(c("shopCode", "ShopName", "OrderDate", "Customer",
-                                                        "OrderItem", "OrderQuantity", "OrderPrice")))
+     sales <- lapply(file.list, read_excel) %>%
+          bind_rows(.id = "id") %>%
+          dplyr::rename(sales, ShopName = 'Shop Name', OrderItem = 'Order Items',
+                        OrderDate = 'Order Date', OrderQuantity = 'Order Quantity',
+                        OrderPrice = 'Order Price', shopCode = ...22, Customer = "Customer Id") %>%
+          dplyr::select(c("shopCode", "ShopName", "OrderDate", "Customer",
+                          "OrderItem", "OrderQuantity", "OrderPrice")))
 
 #load and process product info####
 
@@ -25,14 +25,14 @@ system.time(productData <- read.csv("Data/Input Data/allProductData.csv",
                                     colClasses = c("product.name"="character","id"="character",
                                                    "product.brand"="character", "product.category"="character",
                                                    "enlisted.shop.code"="character","mrp"="numeric",
-                                                   "seller.price"="numeric","evaly.price"="numeric")) %>%
-                                dplyr::rename(OrderItem = 'product.name', shopCode = 'enlisted.shop.code') %>%
-                                dplyr::filter(!grepl("express", shopCode, ignore.case = T)))
+                                                   "seller.price"="numeric","e.price"="numeric")) %>%
+                 dplyr::rename(OrderItem = 'product.name', shopCode = 'enlisted.shop.code') %>%
+                 dplyr::filter(!grepl("express", shopCode, ignore.case = T)))
 
 
 #merged product sales data
 salesWprod <- merge(sales, productData, by=c("OrderItem", "shopCode"),all.x = F, all.y = F) %>%
-                    select(-c("X", "product.brand"))
+     select(-c("X", "product.brand"))
 salesWprod$OrderQuantity <- as.numeric(salesWprod$OrderQuantity)
 salesWprod$seller.price <- as.numeric(salesWprod$seller.price)
 
@@ -53,7 +53,7 @@ catFilter <- ddply(customerCat, .(product.category), summarise,
                    onlyCatCount = sum(catCount, na.rm = T))
 
 customerCat <- merge(merge(customerCat, customerFilter), catFilter) %>%
-                    filter(customerBought > 200 & onlyCatCount > 100)
+     filter(customerBought > 200 & onlyCatCount > 100)
 
 write.csv(customerCat, "Data/Input Data/Product/newCustomerCatCount.csv")
 
